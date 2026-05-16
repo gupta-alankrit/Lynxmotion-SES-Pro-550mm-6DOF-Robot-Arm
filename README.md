@@ -21,7 +21,8 @@
 3. After installing the ROS2 packages for control by following the [official docs](https://github.com/Lynxmotion/SES-P-ROS2-Arms), just do the edit below to avoid any control plugin errors.
    Edit the line 61 in at `~/SES-P-ROS2-Arms/src/pro_arm_decription/launch/view_ign.launch.py` as below:
    - Original:
-     ```finger```
+     ```
+     finger```
    - Edited:
      ```
      finger,
