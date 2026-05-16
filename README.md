@@ -1,5 +1,7 @@
 # Lynxmotion-SES-Pro-550mm-6DOF-Robot-Arm
 
+## General
+
 1. Useful links.
    - Documentation: [Here](https://wiki.lynxmotion.com/info/wiki/lynxmotion/view/ses-pro/ses-pro-arms/ses-pro-550-6-dof-arm/)
    - SES-PRO Robotic Arm UI software: [Here](https://wiki.lynxmotion.com/info/wiki/lynxmotion/view/ses-pro/ses-pro-software/ses-pro-arm-ui/)
