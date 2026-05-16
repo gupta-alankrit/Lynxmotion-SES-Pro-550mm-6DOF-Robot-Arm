@@ -30,7 +30,7 @@
      "ros2_control_plugin:=sim",
      ```
    Then, rebuild and source the workspace.
-4. 4. After the previous edit, the `move_arm.launch.py` (which is included by `sim_arm_control.launch.py`) still unconditionally starts a standalone `ros2_control_node`. In sim mode this node crashes because
+4. After the previous edit, the `move_arm.launch.py` (which is included by `sim_arm_control.launch.py`) still unconditionally starts a standalone `ros2_control_node`. In sim mode this node crashes because
   `gz_ros2_control` (running inside the Gazebo process) already hosts its own `controller_manager` and owns the `ign_ros2_control/IgnitionSystem` hardware interface — the standalone node can't load that class
   because it filters by base type `hardware_interface::SystemInterface`. The crash looks like:
 
