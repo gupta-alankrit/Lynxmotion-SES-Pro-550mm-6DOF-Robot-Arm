@@ -20,11 +20,11 @@
      Cannot test since we don’t have any grippers yet.
 3. After installing the ROS2 packages for control by following the [official docs](https://github.com/Lynxmotion/SES-P-ROS2-Arms), just do the edit below to avoid any control plugin errors. Edit the line 61 in at `~/SES-P-ROS2-Arms/src/pro_arm_decription/launch/view_ign.launch.py` as below:
    - Original:
-     ```
+     ```python
      finger
      ```
    - Edited:
-     ```
+     ```python
      finger,
      " ",
      "ros2_control_plugin:=sim",
@@ -37,7 +37,7 @@
      [ERROR] [ros2_control_node-3]: process has died [pid ..., exit code -6, ...]
      ```
 
-     The simulation still works (gz_ros2_control loads the controllers itself), but the noisy crash should be suppressed. Edit `~/SES-P-ROS2-Arms/src/pro_arm_moveit/launch/move_arm.launch.py` in two places.
+     The simulation still works (`gz_ros2_control` loads the controllers itself), but the noisy crash should be suppressed. Edit `~/SES-P-ROS2-Arms/src/pro_arm_moveit/launch/move_arm.launch.py` in two places.
 
      **Edit A — line 11, add `UnlessCondition` to the imports:**
      - Original:
@@ -84,13 +84,7 @@
        ),  
        ``` 
        
-     Then rebuild and source the workspace:
-     ```
-     colcon build --packages-select pro_arm_moveit --symlink-install
-     source install/setup.bash
-     ```
-     
-     This change is safe for all three modes:
+     Then rebuild and source the workspace. This change is safe for all three modes:
      - `fake` (default for `move_arm.launch.py`, `fake_arm_control.launch.py`) → standalone
   `ros2_control_node` still starts and loads `fake_components/GenericSystem`.
      - `sim` (`sim_arm_control.launch.py`) → standalone node is skipped; gz_ros2_control's in-process
