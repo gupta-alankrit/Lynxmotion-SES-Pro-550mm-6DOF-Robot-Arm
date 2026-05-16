@@ -35,7 +35,8 @@
      "ros2_control_plugin:=sim",
      ```
    Then, rebuild and source the workspace.
-1. The `move_arm.launch.py` (which is included by `sim_arm_control.launch.py`) still unconditionally starts a standalone `ros2_control_node`. In `sim` mode this node crashes because `gz_ros2_control` (running inside the Gazebo process) already hosts its own `controller_manager` and owns the `ign_ros2_control/IgnitionSystem` hardware interface; the standalone node can't load that class because it filters by base type `hardware_interface::SystemInterface`. The crash looks like:
+
+2. The `move_arm.launch.py` (which is included by `sim_arm_control.launch.py`) still unconditionally starts a standalone `ros2_control_node`. In `sim` mode this node crashes because `gz_ros2_control` (running inside the Gazebo process) already hosts its own `controller_manager` and owns the `ign_ros2_control/IgnitionSystem` hardware interface; the standalone node can't load that class because it filters by base type `hardware_interface::SystemInterface`. The crash looks like:
      ```
      [ros2_control_node-3] terminate called after throwing an instance of 'pluginlib::LibraryLoadException'
      [ros2_control_node-3]   what():  ... the class ign_ros2_control/IgnitionSystem with base class type hardware_interface::SystemInterface does not exist.
@@ -96,3 +97,27 @@
   `controller_manager` handles everything.
      - `real` (`real_arm_control.launch.py`) → standalone node still starts and loads 
   `pro_motor_hardware/ProMotorHardware` to talk to the servos.
+
+3. Optional cosmetic cleanup: silence the `ign_ros2_control plugin got renamed to gz_ros2_control`
+  deprecation warning printed by Gazebo during `sim` mode. Both class names refer to the same C++ class
+  on ROS 2 Humble — `ign_ros2_control/IgnitionSystem` is the old name kept for backward compatibility,
+  `gz_ros2_control/GazeboSimSystem` is the current one. Switching is purely a name change and does not
+  affect simulation behavior. The warning looks like:
+     ```
+     [ign gazebo-1] [WARN] [gz_ros2_control]: The ign_ros2_control plugin got renamed to gz_ros2_control.
+     Update the <ros2_control> tag and gazebo plugin to
+     <hardware>
+       <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+     </hardware>
+     ```
+     Edit `~/SES-P-ROS2-Arms/src/pro_arm_description/urdf/pro_arm.ros2_control` and replace **both**
+  occurrences (lines 16 and 172 — one for the arm `ros2_control` block, one for the gripper block).
+     - Original:
+       ```xml
+       <plugin>ign_ros2_control/IgnitionSystem</plugin>
+       ```
+     - Edited:
+       ```xml
+       <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+       ```
+     Then rebuild and source the workspace.
