@@ -92,7 +92,7 @@
      Then rebuild and source the workspace. This change is safe for all three modes:
      - `fake` (default for `move_arm.launch.py`, `fake_arm_control.launch.py`) → standalone
   `ros2_control_node` still starts and loads `fake_components/GenericSystem`.
-     - `sim` (`sim_arm_control.launch.py`) → standalone node is skipped; gz_ros2_control's in-process
-  controller_manager handles everything.
+     - `sim` (`sim_arm_control.launch.py`) → standalone node is skipped; `gz_ros2_control`'s in-process
+  `controller_manager` handles everything.
      - `real` (`real_arm_control.launch.py`) → standalone node still starts and loads 
   `pro_motor_hardware/ProMotorHardware` to talk to the servos.
