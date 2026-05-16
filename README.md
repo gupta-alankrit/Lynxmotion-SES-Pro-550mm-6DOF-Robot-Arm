@@ -18,7 +18,10 @@
    - J6
 
      Cannot test since we don’t have any grippers yet.
-3. After installing the ROS2 packages for control by following the [official docs](https://github.com/Lynxmotion/SES-P-ROS2-Arms), just do the edit below to avoid any control plugin errors. Edit the line 61 in at `~/SES-P-ROS2-Arms/src/pro_arm_decription/launch/view_ign.launch.py` as below:
+
+## ROS2 Control
+
+1. After installing the ROS2 packages for control by following the [official docs](https://github.com/Lynxmotion/SES-P-ROS2-Arms), just do the edit below to avoid any control plugin errors. Edit the line 61 in at `~/SES-P-ROS2-Arms/src/pro_arm_decription/launch/view_ign.launch.py` as below:
    - Original:
      ```python
      finger
@@ -30,7 +33,7 @@
      "ros2_control_plugin:=sim",
      ```
    Then, rebuild and source the workspace.
-4. The `move_arm.launch.py` (which is included by `sim_arm_control.launch.py`) still unconditionally starts a standalone `ros2_control_node`. In `sim` mode this node crashes because `gz_ros2_control` (running inside the Gazebo process) already hosts its own `controller_manager` and owns the `ign_ros2_control/IgnitionSystem` hardware interface; the standalone node can't load that class because it filters by base type `hardware_interface::SystemInterface`. The crash looks like:
+1. The `move_arm.launch.py` (which is included by `sim_arm_control.launch.py`) still unconditionally starts a standalone `ros2_control_node`. In `sim` mode this node crashes because `gz_ros2_control` (running inside the Gazebo process) already hosts its own `controller_manager` and owns the `ign_ros2_control/IgnitionSystem` hardware interface; the standalone node can't load that class because it filters by base type `hardware_interface::SystemInterface`. The crash looks like:
      ```
      [ros2_control_node-3] terminate called after throwing an instance of 'pluginlib::LibraryLoadException'
      [ros2_control_node-3]   what():  ... the class ign_ros2_control/IgnitionSystem with base class type hardware_interface::SystemInterface does not exist.
