@@ -100,7 +100,7 @@
 
 3. Optional cosmetic cleanup: silence the `ign_ros2_control plugin got renamed to gz_ros2_control`
   deprecation warning printed by Gazebo during `sim` mode. Both class names refer to the same C++ class
-  on ROS 2 Humble — `ign_ros2_control/IgnitionSystem` is the old name kept for backward compatibility,
+  on ROS 2 Humble -- `ign_ros2_control/IgnitionSystem` is the old name kept for backward compatibility,
   `gz_ros2_control/GazeboSimSystem` is the current one. Switching is purely a name change and does not
   affect simulation behavior. The warning looks like:
      ```
