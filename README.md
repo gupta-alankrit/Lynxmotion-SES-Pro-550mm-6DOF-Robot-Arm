@@ -22,11 +22,13 @@
    Edit the line 61 in at `~/SES-P-ROS2-Arms/src/pro_arm_decription/launch/view_ign.launch.py` as below:
    - Original:
      ```
-     finger```
+     finger
+     ```
    - Edited:
      ```
      finger,
      " ",
-     "ros2_control_plugin:=sim",```
+     "ros2_control_plugin:=sim",
+     ```
    Then, rebuild and source the workspace.
 5. dsf
