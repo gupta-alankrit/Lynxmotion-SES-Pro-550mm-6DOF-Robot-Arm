@@ -30,23 +30,17 @@
      "ros2_control_plugin:=sim",
      ```
    Then, rebuild and source the workspace.
-4. After the previous edit, the `move_arm.launch.py` (which is included by `sim_arm_control.launch.py`)
-   still unconditionally starts a standalone `ros2_control_node`. In sim mode this node crashes because
-  `gz_ros2_control` (running inside the Gazebo process) already hosts its own `controller_manager` and
-  owns the `ign_ros2_control/IgnitionSystem` hardware interface — the standalone node can't load that
-  class because it filters by base type `hardware_interface::SystemInterface`. The crash looks like:
-  
+4. 4. After the previous edit, the `move_arm.launch.py` (which is included by `sim_arm_control.launch.py`) still unconditionally starts a standalone `ros2_control_node`. In sim mode this node crashes because
+  `gz_ros2_control` (running inside the Gazebo process) already hosts its own `controller_manager` and owns the `ign_ros2_control/IgnitionSystem` hardware interface — the standalone node can't load that class
+  because it filters by base type `hardware_interface::SystemInterface`. The crash looks like:
+
      ```
-     [ros2_control_node-3] terminate called after throwing an instance of
-  'pluginlib::LibraryLoadException'
-     [ros2_control_node-3]   what():  ... the class ign_ros2_control/IgnitionSystem with base class type
-  hardware_interface::SystemInterface does not exist.
+     [ros2_control_node-3] terminate called after throwing an instance of 'pluginlib::LibraryLoadException'
+     [ros2_control_node-3]   what():  ... the class ign_ros2_control/IgnitionSystem with base class type hardware_interface::SystemInterface does not exist.
      [ERROR] [ros2_control_node-3]: process has died [pid ..., exit code -6, ...]
      ```
 
-     The simulation still works (gz_ros2_control loads the controllers itself), but the noisy crash
-  should be suppressed. Edit `~/SES-P-ROS2-Arms/src/pro_arm_moveit/launch/move_arm.launch.py` in two
-  places.
+     The simulation still works (gz_ros2_control loads the controllers itself), but the noisy crash should be suppressed. Edit `~/SES-P-ROS2-Arms/src/pro_arm_moveit/launch/move_arm.launch.py` in two places.
 
      **Edit A — line 11, add `UnlessCondition` to the imports:**
      - Original:
@@ -58,8 +52,7 @@
        from launch.conditions import IfCondition, UnlessCondition
        ```
 
-     **Edit B — around line 234, add a `condition=` to the `ros2_control_node` Node so it only starts 
-  when the plugin is *not* `sim`:**
+     **Edit B — around line 234, add a `condition=` to the `ros2_control_node` Node so it only starts when the plugin is *not* `sim`:**
      - Original:
        ```python
        Node(
@@ -85,21 +78,21 @@
                robot_description,
                controller_parameters,
                {"use_sim_time": use_sim_time},
-           ],
+           ],  
            # In sim mode, gz_ros2_control hosts controller_manager inside Gazebo,
            # so the standalone ros2_control_node would fail to load IgnitionSystem.
            condition=UnlessCondition(
                PythonExpression(["'", ros2_control_plugin, "' == 'sim'"])
-           ),
-       ),
-       ```
-
+           ),  
+       ),  
+       ``` 
+       
      Then rebuild and source the workspace:
      ```
      colcon build --packages-select pro_arm_moveit --symlink-install
      source install/setup.bash
      ```
-
+     
      This change is safe for all three modes:
      - `fake` (default for `move_arm.launch.py`, `fake_arm_control.launch.py`) → standalone
   `ros2_control_node` still starts and loads `fake_components/GenericSystem`.
