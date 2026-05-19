@@ -11,7 +11,7 @@
    - J3: [-115, +115]
 
      Though J2 and J3 have different limits, but actually their limits are coupled with each other in the sense that the instantaneous limit of J2 or J3 joint must be computed as per the current position of the other one.
-   - J4: [$-130 \deg$, +160]
+   - J4: [$-130^\circ$, +160]
 
      Cannot go to -180 and +180 deg. because of the excessive tension appearing in the connection wires.
    - J5: [-180, +105]
