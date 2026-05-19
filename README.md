@@ -14,7 +14,7 @@
    - J4: [-130, +160]
 
      Cannot go to -180 and +180 deg. because of the excessive tension appearing in the connection wires.
-   - J5: [-180, +105]
+   - J5: [-105, +180]
 
      Cannot go to +180 deg. because of the excessive tension appearing in the connection wires.
    - J6
