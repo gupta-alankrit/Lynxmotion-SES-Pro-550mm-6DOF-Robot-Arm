@@ -98,7 +98,7 @@
      - `real` (`real_arm_control.launch.py`) → standalone node still starts and loads 
   `pro_motor_hardware/ProMotorHardware` to talk to the servos.
 
-3. Optional cosmetic cleanup: silence the `ign_ros2_control plugin got renamed to gz_ros2_control`
+3. Optional cosmetic cleanup: silence the `ign_ros2_control` plugin got renamed to `gz_ros2_control`
   deprecation warning printed by Gazebo during `sim` mode. Both class names refer to the same C++ class
   on ROS 2 Humble -- `ign_ros2_control/IgnitionSystem` is the old name kept for backward compatibility,
   `gz_ros2_control/GazeboSimSystem` is the current one. Switching is purely a name change and does not
