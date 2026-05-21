@@ -36,7 +36,7 @@
      ```
    Then, rebuild and source the workspace.
 
-2. The `move_arm.launch.py` (which is included by `sim_arm_control.launch.py`) still unconditionally starts a standalone `ros2_control_node`. In `sim` mode this node crashes because `gz_ros2_control` (running inside the Gazebo process) already hosts its own `controller_manager` and owns the `ign_ros2_control/IgnitionSystem` hardware interface; the standalone node can't load that class because it filters by base type `hardware_interface::SystemInterface`. The crash looks like:
+2. The `~/SES-P-ROS2-Arms/src/pro_arm_moveit/launch/move_arm.launch.py` (which is included by `sim_arm_control.launch.py`) still unconditionally starts a standalone `ros2_control_node`. In `sim` mode this node crashes because `gz_ros2_control` (running inside the Gazebo process) already hosts its own `controller_manager` and owns the `ign_ros2_control/IgnitionSystem` hardware interface; the standalone node can't load that class because it filters by base type `hardware_interface::SystemInterface`. The crash looks like:
      ```
      [ros2_control_node-3] terminate called after throwing an instance of 'pluginlib::LibraryLoadException'
      [ros2_control_node-3]   what():  ... the class ign_ros2_control/IgnitionSystem with base class type hardware_interface::SystemInterface does not exist.
