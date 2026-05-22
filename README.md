@@ -163,7 +163,7 @@
 - Root cause: `pro_init_bus()` only sets `c_cflag` (control) flags and leaves `c_iflag`/`c_oflag`/`c_lflag` at the kernel's cooked-mode defaults (`ICRNL`, `IXON`, `OPOST`, `ICANON`, `ECHO`, ...). Those defaults mangle the LSS-P framing -- on input, `\r` (the LSS-P terminator) is mapped to `\n`; on output, post-processing alters the byte stream -- so the very first bytes the driver sends to joint 1 are not parsed by the servo, and the read loop then times out waiting for a reply that never comes.
 - Solution: Edit `pro.c` in two places.
 
-     **Edit A -- around line 36, immediately after the `tcgetattr(...)` if-block: add `cfmakeraw(&tty)`.**
+     **Edit A -- around line 29, immediately after the `tcgetattr(...)` if-block: add `cfmakeraw(&tty)`.**
      - Original:
        ```c
        struct termios tty;
