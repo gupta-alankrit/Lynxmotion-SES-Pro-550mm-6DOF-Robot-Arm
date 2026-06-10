@@ -1,0 +1,76 @@
+<?xml version="1.0"?>
+<!--This does not replace URDF, and is not an extension of URDF.
+    This is a format for representing semantic information about the robot structure.
+    A URDF file must exist for this robot as well, where the joints and the links that are referenced are defined
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="$(arg name)">
+  <!--                   -->
+  <!-- Imported elements -->
+  <!--                   -->
+  <xacro:include filename="$(find pro_arm_moveit)/srdf/pro_arm.xacro" />
+  <xacro:include filename="$(find pro_arm_moveit)/srdf/gripper.xacro" />
+
+  <!--            -->
+  <!-- Parameters -->
+  <!--            -->
+  <!-- Name of the robot (mandatory) -->
+  <xacro:arg name="name" default="pro_arm"/>
+  <!-- Prefix for all entities -->
+  <xacro:arg name="prefix" default="$(arg name)_"/>
+  <!-- Parameter to select dof version-->
+  <xacro:arg name="dof" default="6"/>
+  <!-- Parameter to select size version-->
+  <xacro:arg name="gripper" default="none"/>
+
+  <!--            -->
+  <!-- Properties -->
+  <!--            -->
+  <!--  Prefixes  -->
+  <xacro:property name="prefix" value="$(arg prefix)"/>
+
+  <!--       -->
+  <!-- Robot -->
+  <!--       -->
+  <xacro:if value="${'$(arg dof)' == '5'}">
+    <xacro:pro_arm_5dof
+      prefix="${prefix}"
+    />
+  </xacro:if>
+
+  <xacro:if value="${'$(arg dof)' == '6'}">
+    <xacro:pro_arm_6dof
+      prefix="${prefix}"
+    />
+  </xacro:if>
+
+  <xacro:if value="${'$(arg gripper)' == 'pge_5040'}">
+    <xacro:gripper_pge_5040
+        prefix="${prefix}"
+      />
+      <disable_collisions link1="finger_r" link2="${prefix}link_5" reason="Never"/>
+      <disable_collisions link1="finger_r" link2="gripper" reason="Adjacent"/>
+      <disable_collisions link1="finger_l" link2="${prefix}link_5" reason="Never"/>
+      <disable_collisions link1="finger_l" link2="gripper" reason="Adjacent"/>
+      <disable_collisions link1="finger_r" link2="finger_l" reason="Default"/>
+      <end_effector group="gripper" name="gripper" parent_group="pro_arm" parent_link="${prefix}ee"/>
+  </xacro:if>
+
+  <xacro:if value="${'$(arg gripper)' == 'cge_1010'}">
+    <xacro:gripper_cge_1010
+        prefix="${prefix}"
+      />
+      <disable_collisions link1="finger_1" link2="${prefix}link_5" reason="Never"/>
+      <disable_collisions link1="finger_1" link2="gripper" reason="Adjacent"/>
+      <disable_collisions link1="finger_2" link2="${prefix}link_5" reason="Never"/>
+      <disable_collisions link1="finger_2" link2="gripper" reason="Adjacent"/>
+      <disable_collisions link1="finger_3" link2="${prefix}link_5" reason="Never"/>
+      <disable_collisions link1="finger_3" link2="gripper" reason="Adjacent"/>
+      <disable_collisions link1="finger_1" link2="finger_2" reason="Default"/>
+      <disable_collisions link1="finger_1" link2="finger_3" reason="Default"/>
+      <disable_collisions link1="finger_2" link2="finger_3" reason="Default"/>
+      <end_effector group="gripper" name="gripper" parent_group="pro_arm" parent_link="${prefix}ee"/>
+  </xacro:if>
+
+  <disable_capabilities>3D Perception</disable_capabilities>
+  
+</robot>

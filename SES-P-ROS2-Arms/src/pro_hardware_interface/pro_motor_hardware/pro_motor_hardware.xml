@@ -1,0 +1,9 @@
+<library path="pro_motor_hardware">
+  <class name="pro_motor_hardware/ProMotorHardware"
+         type="pro_motor_hardware::ProMotorHardware"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>
+      Hardware Interface for Pro Motor series servos
+    </description>
+  </class>
+</library>

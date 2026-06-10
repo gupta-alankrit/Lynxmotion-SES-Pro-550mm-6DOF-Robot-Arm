@@ -1,0 +1,48 @@
+two_stage_live_classifier:
+  ros__parameters:
+    color_topic: "/camera/camera/color/image_raw"
+    aligned_depth_topic: "/camera/camera/aligned_depth_to_color/image_raw"
+    camera_info_topic: "/camera/camera/color/camera_info"
+
+    detections_topic: "/classifier/detections"
+
+    summary_path: ""
+
+    # --- YOLOv8-seg (Stage 1) ---
+    yolo_conf_threshold: 0.35
+    yolo_iou_threshold: 0.50
+    yolo_image_size: 416
+    yolo_device: "cpu"
+    confirm_frames: 10
+    track_match_distance_px: 20.0
+
+    # --- Image-to-geometry (Stage 2) ---
+    stage2_device: "cuda"
+    classify_every_n_frames: 3
+    min_crop_size_px: 20
+    topk: 3
+
+    image_size: 224
+    backbone: "convnext_tiny"
+    projector_hidden_dim: 512
+    projector_dropout: 0.1
+    logit_scale: 20.0
+
+    num_surface_points: 4096
+    axis_bins: 12
+    radial_bins: 12
+    pairwise_bins: 12
+
+    # YOLO high-level label -> Stage-2 prefix. ROS 2 params do not natively support
+    # str->str dicts, so the mapping is split into two parallel string arrays.
+    high_to_low_keys:   ["gear", "nut", "screw"]
+    high_to_low_values: ["gear", "nut", "screw"]
+
+    # --- Display ---
+    show_window: true
+    show_camera_view_as_captured: true
+
+    # --- RGBD subscriber base settings ---
+    sync_queue_size: 10
+    sync_slop_sec: 0.05
+    depth_units: 0.001

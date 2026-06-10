@@ -1,0 +1,38 @@
+<launch>
+  <!-- RealSense camera wrapper parameters -->
+  <arg name="camera_name" default="camera"/>
+  <arg name="camera_namespace" default="camera"/>
+
+  <arg name="depth_profile" default="1280x720x30"/>
+  <arg name="rgb_profile" default="1280x720x30"/>
+
+  <!-- Viewer node parameters -->
+  <arg name="display" default="true"/>
+  <arg name="mirror_display" default="false"/>
+  <arg name="depth_visualization_scale" default="50.0"/>
+
+  <!-- Start the official RealSense ROS2 wrapper -->
+  <include file="$(find-pkg-share realsense2_camera)/launch/rs_launch.py">
+    <arg name="camera_name" value="$(var camera_name)"/>
+    <arg name="camera_namespace" value="$(var camera_namespace)"/>
+
+    <arg name="enable_color" value="true"/>
+    <arg name="enable_depth" value="true"/>
+    <arg name="enable_sync" value="true"/>
+
+    <!-- This creates /camera/camera/aligned_depth_to_color/image_raw -->
+    <arg name="align_depth.enable" value="true"/>
+
+    <arg name="depth_module.profile" value="$(var depth_profile)"/>
+    <arg name="rgb_camera.profile" value="$(var rgb_profile)"/>
+  </include>
+
+  <!-- Start the viewer node -->
+  <node pkg="machine_vision_pkg" exec="realsense_rgbd_viewer" name="realsense_rgbd_viewer" output="screen">
+    <param from="$(find-pkg-share machine_vision_pkg)/config/realsense_rgbd_viewer.yaml"/>
+
+    <param name="display" value="$(var display)"/>
+    <param name="mirror_display" value="$(var mirror_display)"/>
+    <param name="depth_visualization_scale" value="$(var depth_visualization_scale)"/>
+  </node>
+</launch>

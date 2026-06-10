@@ -1,0 +1,34 @@
+# Python dependencies for machine_vision_pkg.
+#
+# Install with:
+#     pip install -r requirements.txt
+#
+# Every entry below is pinned to the version actually used on the bench when
+# this workspace was assembled. Pinning matters more than usual here — the
+# YOLOv8 + ConvNeXt + trimesh stack is sensitive to torch / numpy / scipy
+# ABI mismatches, and apt and pip both ship overlapping versions of numpy,
+# scipy, Pillow, and OpenCV that can clash.
+#
+# A clean virtualenv is strongly recommended.
+#
+# The Intel RealSense ROS 2 wrapper (realsense2_camera) is NOT a pip package;
+# install it via apt — see docs/realsense_setup.md.
+
+# --- Numerical / image base (also pulled in transitively by torch etc.) ---
+numpy==1.26.4
+scipy==1.8.0
+opencv-python==4.10.0.84
+Pillow==9.0.1
+
+# --- Stage-1 detector (YOLOv8-seg) ---
+ultralytics==8.4.41
+
+# --- Stage-2 image-to-geometry classifier (ConvNeXt-Tiny via torchvision) ---
+torch==2.5.1
+torchvision==0.20.1
+
+# --- Geometry-prototype generation from bundled .glb assets ---
+trimesh==4.12.2
+
+# --- Training-only (running train_image_to_geometry.py); safe to skip at inference time ---
+scikit-learn==1.7.2

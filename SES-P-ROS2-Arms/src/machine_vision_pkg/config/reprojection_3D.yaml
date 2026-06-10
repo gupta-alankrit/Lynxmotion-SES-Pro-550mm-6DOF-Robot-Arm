@@ -1,0 +1,30 @@
+reprojection_3D:
+  ros__parameters:
+    # RealSense topics (the base RealsenseSyncedRGBDNode subscribes to these)
+    color_topic: "/camera/camera/color/image_raw"
+    aligned_depth_topic: "/camera/camera/aligned_depth_to_color/image_raw"
+    camera_info_topic: "/camera/camera/color/camera_info"
+
+    sync_queue_size: 10
+    sync_slop_sec: 0.05
+    depth_units: 0.001
+
+    # Arm base frame that the output 3D points are expressed in
+    arm_frame: "pro_arm_base_link"
+
+    # Static camera pose in the arm base frame.
+    # CHANGE THESE to match the actual D455 mount on your robot.
+    # Position is in metres; orientation is xyz Euler in degrees.
+    camera_position_x: 0.00375
+    camera_position_y: 0.070456
+    camera_position_z: 0.533465
+    camera_orientation_roll: 135.0 # deg.
+    camera_orientation_pitch: 0.0
+    camera_orientation_yaw: 180.0 # deg.
+
+    # k×k window for robust median depth around each bbox centre
+    depth_window: 7
+
+    # Topic plumbing
+    detections_topic: "/classifier/detections"
+    output_topic: "/reprojection_3D/targets"

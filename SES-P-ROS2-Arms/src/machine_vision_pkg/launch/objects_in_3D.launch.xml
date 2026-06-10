@@ -1,0 +1,50 @@
+<launch>
+  <!-- RealSense camera wrapper parameters -->
+  <arg name="camera_name" default="camera"/>
+  <arg name="camera_namespace" default="camera"/>
+
+  <arg name="depth_profile" default="640x480x30"/>
+  <arg name="rgb_profile" default="640x480x30"/>
+
+  <!-- Classifier overrides commonly set on the command line -->
+  <arg name="show_window" default="true"/>
+  <arg name="yolo_device" default="cpu"/>
+  <arg name="stage2_device" default="cuda"/>
+
+  <!-- Reprojection node settings (arm_frame, camera_position_*, camera_orientation_*,
+       depth_window, etc.) live entirely in config/reprojection_3D.yaml. To override
+       any of them on a one-off basis, pass the param via the standard
+       "ros2 launch ... ros_args p name:=value" form on the command line; no
+       launch args are needed here. -->
+
+  <!-- Start the official RealSense ROS2 wrapper -->
+  <include file="$(find-pkg-share realsense2_camera)/launch/rs_launch.py">
+    <arg name="camera_name" value="$(var camera_name)"/>
+    <arg name="camera_namespace" value="$(var camera_namespace)"/>
+
+    <arg name="enable_color" value="true"/>
+    <arg name="enable_depth" value="true"/>
+    <arg name="enable_sync" value="true"/>
+
+    <arg name="align_depth.enable" value="true"/>
+
+    <arg name="depth_module.profile" value="$(var depth_profile)"/>
+    <arg name="rgb_camera.profile" value="$(var rgb_profile)"/>
+  </include>
+
+  <!-- Stage 1 + Stage 2 classifier -->
+  <node pkg="machine_vision_pkg" exec="two_stage_live_classifier" name="two_stage_live_classifier" output="screen">
+    <param from="$(find-pkg-share machine_vision_pkg)/config/two_stage_live_classifier.yaml"/>
+
+    <param name="show_window" value="$(var show_window)"/>
+    <param name="yolo_device" value="$(var yolo_device)"/>
+    <param name="stage2_device" value="$(var stage2_device)"/>
+  </node>
+
+  <!-- 3D reprojection: consumes /classifier/detections + aligned depth + camera_info,
+       publishes /reprojection_3D/targets in the arm base frame. All settings
+       come from config/reprojection_3D.yaml. -->
+  <node pkg="machine_vision_pkg" exec="reprojection_3D" name="reprojection_3D" output="screen">
+    <param from="$(find-pkg-share machine_vision_pkg)/config/reprojection_3D.yaml"/>
+  </node>
+</launch>

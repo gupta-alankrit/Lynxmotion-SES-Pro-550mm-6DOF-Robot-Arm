@@ -22,213 +22,54 @@
 
      Cannot test since we don’t have any grippers yet.
 
-## ROS2 Control
+## Repository Layout
 
-1. After installing the ROS2 packages for control by following the [official docs](https://github.com/Lynxmotion/SES-P-ROS2-Arms), just do the edit below to avoid any control plugin errors. Edit the line 61 in at `~/SES-P-ROS2-Arms/src/pro_arm_decription/launch/view_ign.launch.py` as below:
-   - Original:
-     ```python
-     finger
-     ```
-   - Edited:
-     ```python
-     finger,
-     " ",
-     "ros2_control_plugin:=sim",
-     ```
-   Then, rebuild and source the workspace.
+| Path | Contents |
+|------|----------|
+| `assets/` | Firmware blobs and other media referenced by this README. |
+| `SES-P-ROS2-Arms/` | A ready-to-build colcon workspace, named to match a fresh clone of the official Lynxmotion [`SES-P-ROS2-Arms`](https://github.com/Lynxmotion/SES-P-ROS2-Arms) repo. Contains those upstream packages with the patches from [`SES-P-ROS2-Arms/README.md`](SES-P-ROS2-Arms/README.md#ros2-control) already applied, plus a custom `machine_vision_pkg/` for vision-driven manipulation. See that README for the build, run, and per-node documentation. |
+| `README.md` | This file -- joint limits and known launch warnings. |
 
-2. The `~/SES-P-ROS2-Arms/src/pro_arm_moveit/launch/move_arm.launch.py` (which is included by `sim_arm_control.launch.py`) still unconditionally starts a standalone `ros2_control_node`. In `sim` mode this node crashes because `gz_ros2_control` (running inside the Gazebo process) already hosts its own `controller_manager` and owns the `ign_ros2_control/IgnitionSystem` hardware interface; the standalone node can't load that class because it filters by base type `hardware_interface::SystemInterface`. The crash looks like:
-     ```
-     [ros2_control_node-3] terminate called after throwing an instance of 'pluginlib::LibraryLoadException'
-     [ros2_control_node-3]   what():  ... the class ign_ros2_control/IgnitionSystem with base class type hardware_interface::SystemInterface does not exist.
-     [ERROR] [ros2_control_node-3]: process has died [pid ..., exit code -6, ...]
-     ```
+If you'd rather start from a clean upstream clone, ignore `SES-P-ROS2-Arms/` and follow the patches in [`SES-P-ROS2-Arms/README.md#ros2-control`](SES-P-ROS2-Arms/README.md#ros2-control) by hand instead.
 
-     The simulation still works (`gz_ros2_control` loads the controllers itself), but the noisy crash should be suppressed. Edit `~/SES-P-ROS2-Arms/src/pro_arm_moveit/launch/move_arm.launch.py` in two places.
+## Cloning & Setup
 
-     **Edit A — line 11, add `UnlessCondition` to the imports:**
-     - Original:
-       ```python
-       from launch.conditions import IfCondition
-       ```
-     - Edited:
-       ```python
-       from launch.conditions import IfCondition, UnlessCondition
-       ```
+Two ways to get the workspace onto your machine, depending on whether you already maintain a colcon workspace.
 
-     **Edit B — around line 234, add a `condition=` to the `ros2_control_node` Node so it only starts when the plugin is *not* `sim`:**
-     - Original:
-       ```python
-       Node(
-           package="controller_manager",
-           executable="ros2_control_node",
-           output="log",
-           arguments=["--ros-args", "--log-level", log_level],
-           parameters=[
-               robot_description,
-               controller_parameters,
-               {"use_sim_time": use_sim_time},
-           ],
-       ),
-       ```
-     - Edited:
-       ```python
-       Node(
-           package="controller_manager",
-           executable="ros2_control_node",
-           output="log",
-           arguments=["--ros-args", "--log-level", log_level],
-           parameters=[
-               robot_description,
-               controller_parameters,
-               {"use_sim_time": use_sim_time},
-           ],  
-           # In sim mode, gz_ros2_control hosts controller_manager inside Gazebo,
-           # so the standalone ros2_control_node would fail to load IgnitionSystem.
-           condition=UnlessCondition(
-               PythonExpression(["'", ros2_control_plugin, "' == 'sim'"])
-           ),  
-       ),  
-       ``` 
-       
-     Then rebuild and source the workspace. This change is safe for all three modes:
-     - `fake` (default for `move_arm.launch.py`, `fake_arm_control.launch.py`) → standalone
-  `ros2_control_node` still starts and loads `fake_components/GenericSystem`.
-     - `sim` (`sim_arm_control.launch.py`) → standalone node is skipped; `gz_ros2_control`'s in-process
-  `controller_manager` handles everything.
-     - `real` (`real_arm_control.launch.py`) → standalone node still starts and loads 
-  `pro_motor_hardware/ProMotorHardware` to talk to the servos.
+### Option A -- clone the whole repo and build in place
 
-3. Optional cosmetic cleanup: silence the `ign_ros2_control` plugin got renamed to `gz_ros2_control`
-  deprecation warning printed by Gazebo during `sim` mode. Both class names refer to the same C++ class
-  on ROS 2 Humble -- `ign_ros2_control/IgnitionSystem` is the old name kept for backward compatibility,
-  `gz_ros2_control/GazeboSimSystem` is the current one. Switching is purely a name change and does not
-  affect simulation behavior. The warning looks like:
-     ```
-     [ign gazebo-1] [WARN] [gz_ros2_control]: The ign_ros2_control plugin got renamed to gz_ros2_control.
-     Update the <ros2_control> tag and gazebo plugin to
-     <hardware>
-       <plugin>gz_ros2_control/GazeboSimSystem</plugin>
-     </hardware>
-     ```
-     Edit `~/SES-P-ROS2-Arms/src/pro_arm_description/urdf/pro_arm.ros2_control` and replace **both**
-  occurrences (lines 16 and 172 — one for the arm `ros2_control` block, one for the gripper block).
-     - Original:
-       ```xml
-       <plugin>ign_ros2_control/IgnitionSystem</plugin>
-       ```
-     - Edited:
-       ```xml
-       <plugin>gz_ros2_control/GazeboSimSystem</plugin>
-       ```
-     Then rebuild and source the workspace.
+Cleanest if you don't have an existing ROS 2 workspace, or want the documentation alongside the code.
 
-4. Set explicit per-joint `max_velocity` values in `~/SES-P-ROS2-Arms/src/pro_arm_moveit/config/joint_limits.yaml`*so MoveIt's Time-Optimal Trajectory Generation (TOTG) stops falling back to its 1 rad/s default. The shipped file declares `has_velocity_limits: false` for every joint, which triggers this warning at launch:
-   ```
-   [moveit_trajectory_processing.time_optimal_trajectory_generation]: Joint velocity
-   limits are not defined. Using the default 1 rad/s. You can define velocity limits
-   in the URDF or joint_limits.yaml.
-   ```
-   So set `has_velocity_limits: true` and an explicit `max_velocity` (must be rad/s; deg/s shown alongside for clarity) per arm joint in `~/SES-P-ROS2-Arms/src/pro_arm_moveit/config/joint_limits.yaml`, matching the URDF ceilings:
-   - J1, J2, J3 (S1 / standard servo): `1.57 rad/s` ≡ `90 °/s`.
-   - J4, J5 (L1 / lite servo): `1.31 rad/s` ≡ `75 °/s`.
-   - J6: capped at `1.31 rad/s` ≡ `75 °/s` for consistency with J4/J5 (URDF allows up to `6.283 rad/s` ≡ `360 °/s`).
+```bash
+git clone https://github.com/gupta-alankrit/Lynxmotion-SES-Pro-550mm-6DOF-Robot-Arm.git
+cd Lynxmotion-SES-Pro-550mm-6DOF-Robot-Arm/SES-P-ROS2-Arms
+rosdep install --from-paths src --ignore-src -r -y     # one-time
+colcon build --symlink-install
+source install/setup.bash
+```
 
-   These are MoveIt planning ceilings only — the real arm physically tops out at ≈ `0.087 rad/s` ≡ `5 °/s` on every joint.
+You can now run any of the `ros2 launch machine_vision_pkg ...` commands from inside `SES-P-ROS2-Arms/`.
 
-   Example block for `pro_arm_joint_1` (apply analogous edits to all six arm joints, using `1.31` for joints 4–6):
-   ```yaml
-   pro_arm_joint_1:
-     has_velocity_limits: true
-     max_velocity: 1.57     # rad/s (ceil: 90 deg/s, actual movement: 5 deg/s)
-     has_acceleration_limits: true
-     max_acceleration: 1.74  # rad/s^2 (~99.7 deg/s^2)
-   ```
+### Option B -- drop the packages into your existing workspace
 
-   Then rebuild and source the workspace.
+Use this if you already have a colcon workspace at, say, `~/ros2_ws/`. Either copy the package directories in:
 
-5. **USB port permissions for the real arm.** The `pro_motor_hardware` driver needs read/write access to `/dev/ttyACM0`. By default the device is owned by `root:dialout` with mode `crw-rw----`, which excludes regular users -- without this the driver fails immediately at `open()` with `Permission denied`. Two options:
-   - **One-shot per boot** (the official docs' suggestion; needs to be re-run after every reboot or unplug/replug):
-     ```bash
-     sudo chmod 666 /dev/ttyACM0
-     ```
-   - **Persistent (recommended)** — add yourself to the `dialout` group once, then log out and back in (or reboot) for the new group to take effect:
-     ```bash
-     sudo usermod -aG dialout $USER
-     ```
+```bash
+git clone https://github.com/gupta-alankrit/Lynxmotion-SES-Pro-550mm-6DOF-Robot-Arm.git /tmp/lynx-doc-repo
+cp -r /tmp/lynx-doc-repo/SES-P-ROS2-Arms/src/* ~/SES-P-ROS2-Arms/src/
+cd ~/SES-P-ROS2-Arms
+rosdep install --from-paths src --ignore-src -r -y
+colcon build --symlink-install
+source install/setup.bash
+```
 
-6. **Termios setup in `~/SES-P-ROS2-Arms/src/pro_hardware_interface/pro_motor_hardware/src/pro.c`** ⚠️ critical.
+… or, if you only want a subset (e.g. just the custom vision package because you already have the upstream `pro_*` packages), replace the `cp -r` line with the specific directory you want, for instance:
 
-- Issue: `ros2 launch pro_arm_moveit real_arm_control.launch.py` silently hangs forever during hardware init -- the spawner nodes time out on `/controller_manager/list_controllers`, the controllers never come up, and joint 1's LED enters the red/white blinking pattern (LSS-P `QLI = 8` = "Unknown Serial Command").
-- Root cause: `pro_init_bus()` only sets `c_cflag` (control) flags and leaves `c_iflag`/`c_oflag`/`c_lflag` at the kernel's cooked-mode defaults (`ICRNL`, `IXON`, `OPOST`, `ICANON`, `ECHO`, ...). Those defaults mangle the LSS-P framing -- on input, `\r` (the LSS-P terminator) is mapped to `\n`; on output, post-processing alters the byte stream -- so the very first bytes the driver sends to joint 1 are not parsed by the servo, and the read loop then times out waiting for a reply that never comes.
-- Solution: Edit `pro.c` in two places.
+```bash
+cp -r /tmp/lynx-doc-repo/SES-P-ROS2-Arms/src/machine_vision_pkg ~/ros2_ws/src/
+```
 
-     **Edit A -- around line 29, immediately after the `tcgetattr(...)` if-block: add `cfmakeraw(&tty)`.**
-     - Original:
-       ```c
-       struct termios tty;
-       if (tcgetattr(g_serial_fd, &tty) != 0) {
-           printf("Failed to get port attributes (errno: %d - %s)\n", 
-                  errno, strerror(errno));
-           close(g_serial_fd);
-           return false;
-       }
-
-       // Set baud rate
-       ```
-     - Edited:
-       ```c
-       struct termios tty;
-       if (tcgetattr(g_serial_fd, &tty) != 0) {
-           printf("Failed to get port attributes (errno: %d - %s)\n", 
-                  errno, strerror(errno));
-           close(g_serial_fd);
-           return false;
-       }
-
-       // Raw-mode baseline: clears ICRNL/IXON/OPOST/ICANON/ECHO so LSS-P
-       // framing (\r terminator) passes through unmangled.
-       cfmakeraw(&tty);
-
-       // Set baud rate
-       ```
-
-     **Edit B -- around line 66, immediately before the `tcsetattr(...)` call: add `tcflush(g_serial_fd, TCIOFLUSH)`.**
-     - Original:
-       ```c
-       if (tcsetattr(g_serial_fd, TCSANOW, &tty) != 0) {
-           close(g_serial_fd);
-           return false;
-       }
-       ```
-     - Edited:
-       ```c
-       tcflush(g_serial_fd, TCIOFLUSH);   // drop any stale RX/TX bytes
-       if (tcsetattr(g_serial_fd, TCSANOW, &tty) != 0) {
-           close(g_serial_fd);
-           return false;
-       }
-       ```
-
-     Then rebuild and source the workspace. After this fix the real-arm launch progresses past port setup; the visual-debug procedure (set `CLED 0` on every servo via PRO Config so the LEDs are dark at boot, then launch and watch) shows all six joints transitioning cleanly through `on_configure` (brief green flashes) and `on_activate` (brief blue flashes).
-
-7. **Joint 4 `max_speed` typo in `pro_arm.ros2_control`.** After the termios fix the launch comes up cleanly, but joint 4 immediately enters a persistent error state and refuses to move -- LED blinks 4× red then pauses, status reads "Error" and the error field shows "Speed Setting Exceeds Limit" (LSS-P `QLI = 3`). Cause: the URDF tells `pro_motor_hardware` to push joint 4 to `90 °/s`, but joint 4 is an **L1 (lite) servo** with a hardware ceiling of `75 °/s`. Joints 5 and 6 (also L1) are correctly set to 75 -- only joint 4 has the typo. Edit `~/SES-P-ROS2-Arms/src/pro_arm_description/urdf/pro_arm.ros2_control` line 104:
-   - Original:
-     ```xml
-     <joint name="${prefix}joint_4">
-       <param name="id">4</param>
-       <param name="max_speed">90</param>
-       <param name="acceleration">50</param>
-     ```
-   - Edited:
-     ```xml
-     <joint name="${prefix}joint_4">
-       <param name="id">4</param>
-       <param name="max_speed">75</param>
-       <param name="acceleration">50</param>
-     ```
-
-   Then rebuild and source the workspace. Before relaunching, open PRO Config with `Select ID = 4` and click **RESET** (top right) to clear joint 4's persistent error state — the servo will keep rejecting commands until its stored fault is cleared, even with the URDF fixed.
+Detailed per-node and per-launch-file documentation lives in [`SES-P-ROS2-Arms/README.md`](SES-P-ROS2-Arms/README.md).
 
 ## Expected Warnings & Errors at Launch
 
@@ -238,7 +79,7 @@ When running any of `ros2 launch pro_arm_moveit {move_arm, fake_arm_control, sim
 - **sim** = `sim_arm_control.launch.py`,
 - **real** = `real_arm_control.launch.py`.
 
-(Items not tagged with `sim` are absent in sim mode because the ROS2 Control edit in item 2 above skips the standalone `ros2_control_node` in sim mode.)
+(Items not tagged with `sim` are absent in sim mode because [item 2 of the workspace's ROS2 Control patches](SES-P-ROS2-Arms/README.md#ros2-control) skips the standalone `ros2_control_node` in sim mode.)
 
 <!-- ### Safe to ignore (cosmetic / upstream noise) -->
 

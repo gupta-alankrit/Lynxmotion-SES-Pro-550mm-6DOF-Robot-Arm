@@ -1,0 +1,23 @@
+# IDE caches
+.vscode/
+**/.vscode/
+*.code-workspace
+
+# Large ML model weights — host externally, see workspace README
+SES-P-ROS2-Arms/src/machine_vision_pkg/models/*.pth
+SES-P-ROS2-Arms/src/machine_vision_pkg/models/*.pt
+
+# colcon / ROS 2 build artifacts
+**/build/
+**/install/
+**/log/
+
+# Python build artifacts
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+
+# OS noise
+.DS_Store
+Thumbs.db
